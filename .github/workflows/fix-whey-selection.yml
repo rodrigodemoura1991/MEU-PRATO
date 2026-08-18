@@ -1,0 +1,39 @@
+name: Fix whey quick selection
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: ${{ !contains(github.event.head_commit.message, 'fix: corrigir whey quick selection') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Corrigir complemento de whey
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+
+          # Apenas whey: remove o botão de leite e atualiza o texto.
+          s = s.replace('<button class="quick wide" data-quick="milk">🥛 Leite desnatado 200 ml<br><b>≈70 kcal</b></button>', '')
+          s = s.replace('Seu whey da manhã, sem precisar digitar.', 'Adicione seu whey em qualquer horário, sem precisar digitar.')
+
+          marker = '<!-- WHEY_SELECTION_FIX_V2 -->'
+          if marker not in s:
+              script = r'''\n<script>\n// WHEY_SELECTION_FIX_V2\n(function(){\n  const buttons=[...document.querySelectorAll('.quick[data-quick^="w"]')];\n  const summary=document.getElementById('quickSummary');\n  let wheyG=0;\n  const vals={w15:{g:15,k:60,p:10.5,c:2.4,f:.9},w30:{g:30,k:119,p:21,c:4.8,f:1.8},w45:{g:45,k:178.5,p:31.5,c:7.2,f:2.7},w60:{g:60,k:238,p:42,c:9.6,f:3.6}};\n  function render(){\n    buttons.forEach(b=>b.classList.toggle('active',b.dataset.quick==='w'+wheyG));\n    summary.textContent=wheyG ? `Adicionado: Whey ${wheyG} g • ${Math.round(vals['w'+wheyG].k)} kcal` : 'Nenhum whey selecionado';\n  }\n  buttons.forEach(b=>b.addEventListener('click',()=>{\n    const g=Number(b.dataset.quick.slice(1));\n    wheyG=wheyG===g?0:g;\n    render();\n  }));\n  render();\n\n  const originalFetch=window.fetch.bind(window);\n  window.fetch=async function(input,init){\n    const response=await originalFetch(input,init);\n    if(!wheyG || !String(input).includes('analyze-plate')) return response;\n    try{\n      const data=await response.clone().json();\n      const v=vals['w'+wheyG];\n      data.calories=(Number(data.calories)||0)+v.k;\n      data.calories_low=(Number(data.calories_low)||Number(data.calories)||0)+v.k;\n      data.calories_high=(Number(data.calories_high)||Number(data.calories)||0)+v.k;\n      data.protein_g=(Number(data.protein_g)||0)+v.p;\n      data.carbs_g=(Number(data.carbs_g)||0)+v.c;\n      data.fat_g=(Number(data.fat_g)||0)+v.f;\n      data.total_weight_g=(Number(data.total_weight_g)||0)+wheyG;\n      data.summary=(data.summary||'Estimativa da refeição')+` + Whey ${wheyG} g`;\n      data.foods=Array.isArray(data.foods)?data.foods:[];\n      data.foods.push({name:`Whey (${wheyG} g)`,estimated_weight_g:wheyG,calories:v.k,category:'quick'});\n      return new Response(JSON.stringify(data),{status:response.status,statusText:response.statusText,headers:{'Content-Type':'application/json'}});\n    }catch(e){ return response; }\n  };\n})();\n</script>\n'''
+              s = s.replace('</body>', script + '</body>')
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commitar correção
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "fix: corrigir whey quick selection"
+          git push
