@@ -1,1 +1,17 @@
-{"name":"Meu Prato","short_name":"Meu Prato","description":"Estimativa de calorias e macronutrientes pela foto e peso da refeição.","start_url":"./","display":"standalone","background_color":"#f4f6f8","theme_color":"#111827","lang":"pt-BR","icons":[]}
+{
+  "name": "Meu Prato",
+  "short_name": "Meu Prato",
+  "description": "Estimativa de calorias e macronutrientes pela foto e peso da refeição.",
+  "start_url": "./",
+  "scope": "./",
+  "id": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "background_color": "#f6f8f7",
+  "theme_color": "#071a12",
+  "lang": "pt-BR",
+  "orientation": "portrait",
+  "icons": [
+    {"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+  ]
+}
