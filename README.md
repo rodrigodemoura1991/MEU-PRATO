@@ -14,3 +14,5 @@ PWA mobile-first para estimar calorias e macronutrientes de refeições usando f
 Integrar análise visual real para identificar os alimentos da foto e estimar as porções individualmente. A estimativa atual é propositalmente apresentada como estimativa e não como análise automática da imagem.
 
 Atalho de complemento: whey e leite desnatado para facilitar o registro do café da manhã.
+
+<!-- atualização automática -->
