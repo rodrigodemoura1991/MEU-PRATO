@@ -1,0 +1,68 @@
+name: Atualizar Meu Prato — Whey
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Aplicar atalho de whey e leite
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          marker = '<!-- WHEY_QUICK_ADD_V1 -->'
+          if marker in s:
+              print('Whey já aplicado.')
+              raise SystemExit(0)
+
+          html = '''<!-- WHEY_QUICK_ADD_V1 -->
+          <section class="card"><div class="section-head"><div><div class="section-title">Complemento rápido 🥤</div><div class="hint">Adicione facilmente o whey e o leite que você toma pela manhã.</div></div><div class="step">03B</div></div>
+          <div class="quick-grid">
+            <button type="button" class="quick-choice" data-quick="whey15">Whey 15 g<br><b>60 kcal</b></button>
+            <button type="button" class="quick-choice" data-quick="whey30">Whey 30 g<br><b>119 kcal</b></button>
+            <button type="button" class="quick-choice" data-quick="whey45">Whey 45 g<br><b>179 kcal</b></button>
+            <button type="button" class="quick-choice" data-quick="whey60">Whey 60 g<br><b>238 kcal</b></button>
+            <button type="button" class="quick-choice wide" data-quick="milk200">🥛 Leite desnatado 200 ml<br><b>≈70 kcal</b></button>
+          </div>
+          <div id="quickSummary" class="quick-summary">Nenhum complemento selecionado</div></section>
+          '''
+
+          anchor = '<section class="card"><div class="section-head"><div class="section-title">Ajustes</div>'
+          if anchor not in s:
+              raise SystemExit('Âncora HTML não encontrada')
+          s = s.replace(anchor, html + '\n' + anchor, 1)
+
+          css = '''\n.quick-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}.quick-choice{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:13px;padding:10px 6px;font-size:10px;font-weight:850;line-height:1.35;cursor:pointer}.quick-choice b{font-size:11px}.quick-choice.active{background:var(--dark);color:#fff;border-color:var(--dark)}.quick-choice.wide{grid-column:1/-1}.quick-summary{margin-top:8px;background:var(--soft);color:#235b44;border-radius:12px;padding:9px;font-size:10px;font-weight:800;text-align:center}@media(max-width:430px){.quick-grid{grid-template-columns:1fr 1fr}}\n'''
+          css_anchor = '@media(max-width:430px){.app{padding-left:13px;padding-right:13px}.dessert-grid{grid-template-columns:repeat(2,1fr)}.options{grid-template-columns:1fr}.hero h2{font-size:25px}}'
+          if css_anchor not in s:
+              raise SystemExit('Âncora CSS não encontrada')
+          s = s.replace(css_anchor, css_anchor + css, 1)
+
+          js = r'''\n// WHEY_QUICK_ADD_V1\nconst quickAdd={wheyG:0,milk200:false};\nconst wheyPer30={kcal:119,p:21,c:4.8,f:1.8};\nconst milk200={kcal:70,p:6.4,c:9.6,f:0.2,w:200};\nfunction quickTotals(){const w=quickAdd.wheyG/30;return {kcal:wheyPer30.kcal*w+(quickAdd.milk200?milk200.kcal:0),p:wheyPer30.p*w+(quickAdd.milk200?milk200.p:0),c:wheyPer30.c*w+(quickAdd.milk200?milk200.c:0),f:wheyPer30.f*w+(quickAdd.milk200?milk200.f:0),w:quickAdd.wheyG+(quickAdd.milk200?200:0)}}\nfunction renderQuick(){document.querySelectorAll('.quick-choice').forEach(b=>b.classList.remove('active'));if(quickAdd.wheyG)document.querySelector(`.quick-choice[data-quick="whey${quickAdd.wheyG}"]`)?.classList.add('active');if(quickAdd.milk200)document.querySelector('.quick-choice[data-quick="milk200"]')?.classList.add('active');const t=quickTotals();$('quickSummary').textContent=t.kcal?`Adicionado: ${quickAdd.wheyG?`Whey ${quickAdd.wheyG} g`:''}${quickAdd.wheyG&&quickAdd.milk200?' + ':''}${quickAdd.milk200?'Leite desnatado 200 ml':''} • ${Math.round(t.kcal)} kcal`:'Nenhum complemento selecionado'};}\ndocument.querySelectorAll('.quick-choice').forEach(b=>b.onclick=()=>{const k=b.dataset.quick;if(k==='milk200')quickAdd.milk200=!quickAdd.milk200;else quickAdd.wheyG=quickAdd.wheyG===+k.replace('whey','')?0:+k.replace('whey','');renderQuick();if(lastResult){const base={...lastResult,_quickAdded:false};showResult(base)}});renderQuick();\nconst originalShowResult=showResult;showResult=function(d){if(!d)return;let x={...d};if(!x._quickAdded){const t=quickTotals();x.calories=(+x.calories||0)+t.kcal;x.protein_g=(+x.protein_g||0)+t.p;x.carbs_g=(+x.carbs_g||0)+t.c;x.fat_g=(+x.fat_g||0)+t.f;x.total_weight_g=(+x.total_weight_g||0)+t.w;x._quickAdded=true;x.quickAdd={...quickAdd};x.foods=[...(x.foods||[])];if(quickAdd.wheyG)x.foods.push({name:`Whey (${quickAdd.wheyG} g)`,estimated_weight_g:quickAdd.wheyG,calories:wheyPer30.kcal*(quickAdd.wheyG/30),category:'quick'});if(quickAdd.milk200)x.foods.push({name:'Leite desnatado (200 ml)',estimated_weight_g:200,calories:milk200.kcal,category:'quick'});}lastResult=x;originalShowResult(x);if(x.quickAdd){const rows=x.foods||[];$('foodsList').innerHTML=rows.map(f=>`<div class="food-row"><div>${escapeHtml(f.name)} <span class="food-tag">${f.category==='dessert'?'sobremesa':f.category==='quick'?'complemento':'prato'}</span></div><span>${Math.round(f.estimated_weight_g||0)}g • ${Math.round(f.calories||0)} kcal</span></div>`).join('')||'<div class="empty">Nenhum alimento identificado.</div>';}};\nconst originalResetMealForm=resetMealForm;resetMealForm=function(){originalResetMealForm();quickAdd.wheyG=0;quickAdd.milk200=false;renderQuick();};\n'''
+          js_anchor = '\nrenderHistory();renderReport();\n'
+          if js_anchor not in s:
+              raise SystemExit('Âncora JS não encontrada')
+          s = s.replace(js_anchor, js + js_anchor, 1)
+
+          p.write_text(s, encoding='utf-8')
+          print('Patch aplicado com sucesso.')
+          PY
+
+      - name: Commitar alteração
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "feat: atalho de whey e leite desnatado"
+          git push
