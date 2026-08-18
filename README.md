@@ -15,4 +15,4 @@ Integrar análise visual real para identificar os alimentos da foto e estimar as
 
 Atalho de complemento: whey e leite desnatado para facilitar o registro do café da manhã.
 
-<!-- atualização automática -->
+<!-- atualização automática final -->
