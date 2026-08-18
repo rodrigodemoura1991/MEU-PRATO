@@ -1,0 +1,4 @@
+project_id = "uvuytjdfacyacawcirp"
+
+[functions.analyze-plate]
+verify_jwt = false
