@@ -1,4 +1,4 @@
-project_id = "uvuytjdfacyacawcirp"
+project_id = "uvujytjdafcyacawcirp"
 
 [functions.analyze-plate]
 verify_jwt = false
