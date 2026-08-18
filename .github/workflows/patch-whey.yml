@@ -21,7 +21,7 @@ jobs:
           marker = '// WHEY_QUICK_ADD_V1'
           if marker not in s:
               raise SystemExit('Atalho de whey não encontrado')
-          s2 = s.replace('\\\n', '\n')
+          s2 = s.replace(chr(92) + '\n', '\n')
           if s2 == s:
               print('Nenhuma correção necessária.')
           else:
@@ -33,5 +33,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git diff --cached --quiet || git commit -m "fix: corrigir script do atalho de whey"
+          git diff --cached --quiet || git commit -m "fix: normalizar script do atalho de whey"
           git push
